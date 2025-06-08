@@ -4,4 +4,6 @@ project(cudaDLInference LANGUAGES CXX CUDA)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CUDA_STANDARD 14)
 
+include_directories(include)
+
 add_executable(${PROJECT_NAME} src/main.cu)
