@@ -29,10 +29,10 @@ private:
     struct IArrayHolder
     {
         virtual ~IArrayHolder() = default;
-    }
+    };
 
     template<typename T>
-    struct ArrayHolder : public IArrayHolder
+    struct ArrayHolder : IArrayHolder
     {
         std::unique_ptr<CudaArray<T>> m_array_;
     };
