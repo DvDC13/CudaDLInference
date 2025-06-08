@@ -8,7 +8,17 @@
 
 #include "binary_loader.hxx"
 
-int main()
+bool compareOutputs(const float* output1, const float* output2, size_t size, float tol=1e-5f) {
+    for (size_t i = 0; i < size; ++i) {
+        if (std::fabs(output1[i] - output2[i]) > tol) {
+            std::cerr << "Mismatch at " << i << ": " << output1[i] << " vs " << output2[i] << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+int main(void)
 {
     BinaryLoader loader("../python");
 
@@ -84,6 +94,15 @@ int main()
 
     float output_cpu[10];
     fc3_out_gpu.copyToHost(output_cpu);
+
+    std::vector<float> expected_output = loader.loadInVector<float>("expected_output", 10);
+
+    if (compareOutputs(output_cpu, expected_output.data(), 10)) {
+        std::cout << "✅ Output matches expected_output.bin\n";
+    } else {
+        std::cerr << "❌ Mismatch detected.\n";
+        return 1;
+    }
 
     return EXIT_SUCCESS;
 }

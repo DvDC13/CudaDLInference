@@ -27,7 +27,7 @@ void BinaryLoader::loadInCudaArray(const std::string& name, size_t count)
 
     m_entries_[name] = std::move(holder);
 
-    std::cout << "✅ Loaded " << name << std::endl;
+    std::cout << "✅ Loaded: " << name << " (" << count << " " << typeid(T).name() << ")" << std::endl;
 
     file.close();
 }
