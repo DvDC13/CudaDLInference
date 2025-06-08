@@ -11,4 +11,6 @@ add_executable(${PROJECT_NAME} src/main.cu
     src/maxpool2d_forward.cu
     src/relu_forward.cu
     src/fc_forward.cu
-    src/flatten_forward.cu)
+    src/flatten_forward.cu
+    src/binary_loader.cu
+)
