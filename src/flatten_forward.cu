@@ -15,7 +15,7 @@ __global__ void flatten_kernel(
     }
 }
 
-void flatten(
+void flatten_forward(
     const float* input,
     float* output,
     int N, int C, int H, int W
