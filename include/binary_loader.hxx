@@ -17,7 +17,11 @@ public:
     
     // Load and store binary file as a CudaArray<T>
     template<typename T>
-    void load(const std::string& name, size_t count);
+    void loadInCudaArray(const std::string& name, size_t count);
+
+    // load binary file as a vector
+    template<typename T>
+    std::vector<T> loadInVector(const std::string& name, size_t count);
 
     // Get device pointer
     template<typename T>
