@@ -25,16 +25,17 @@ public:
     {
         m_size = getSize(static_cast<size_t>(dims)...);
         checkCudaErrors(cudaMalloc(&m_data, sizeBytes()));
+        checkCudaErrors(cudaMemset(m_data, 0, sizeBytes()));
     }
 
     void copyToDevice(T* data)
     {
-        checkCudaErrors(cudaMemcpy(m_data, data, m_size, cudaMemcpyHostToDevice));
+        checkCudaErrors(cudaMemcpy(m_data, data, sizeBytes(), cudaMemcpyHostToDevice));
     }
 
     void copyToHost(T* data)
     {
-        checkCudaErrors(cudaMemcpy(data, m_data, m_size, cudaMemcpyDeviceToHost));
+        checkCudaErrors(cudaMemcpy(data, m_data, sizeBytes(), cudaMemcpyDeviceToHost));
     }
 
     inline T* data() const { return m_data; }
