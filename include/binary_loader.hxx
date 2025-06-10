@@ -23,6 +23,14 @@ public:
     template<typename T>
     std::vector<T> loadInVector(const std::string& name, size_t count);
 
+    // load all images as a vector
+    template<typename T>
+    std::vector<T> loadImages(const std::string& name, size_t N, size_t C, size_t H, size_t W);
+
+    // load all labels as a vector
+    template<typename T>
+    std::vector<T> loadLabels(const std::string& filename, size_t N);
+
     // Get device pointer
     template<typename T>
     T* get(const std::string& name);

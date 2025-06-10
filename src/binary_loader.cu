@@ -60,6 +60,41 @@ std::vector<T> BinaryLoader::loadInVector(const std::string& name, size_t count)
 }
 
 template<typename T>
+std::vector<T> BinaryLoader::loadImages(const std::string& filename, size_t N, size_t C, size_t H, size_t W) {
+    size_t total = N * C * H * W;
+    std::vector<T> data(total);
+
+    std::ifstream file(filename, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("Failed to open image file: " + filename);
+    }
+
+    file.read(reinterpret_cast<char*>(data.data()), total * sizeof(T));
+    if (!file) {
+        throw std::runtime_error("Failed to read image data from: " + filename);
+    }
+
+    return data;
+}
+
+template<typename T>
+std::vector<T> BinaryLoader::loadLabels(const std::string& filename, size_t N) {
+    std::vector<T> labels(N);
+
+    std::ifstream file(filename, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("Failed to open label file: " + filename);
+    }
+
+    file.read(reinterpret_cast<char*>(labels.data()), N * sizeof(T));
+    if (!file) {
+        throw std::runtime_error("Failed to read label data from: " + filename);
+    }
+
+    return labels;
+}
+
+template<typename T>
 T* BinaryLoader::get(const std::string& name)
 {
     auto it = m_entries_.find(name);
@@ -79,4 +114,6 @@ T* BinaryLoader::get(const std::string& name)
 
 template void BinaryLoader::loadInCudaArray<float>(const std::string& name, size_t count);
 template std::vector<float> BinaryLoader::loadInVector<float>(const std::string& name, size_t count);
+template std::vector<float> BinaryLoader::loadImages<float>(const std::string& name, size_t N, size_t C, size_t H, size_t W);
+template std::vector<float> BinaryLoader::loadLabels<float>(const std::string& filename, size_t N);
 template float* BinaryLoader::get<float>(const std::string& name);

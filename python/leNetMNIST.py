@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+from torchvision import datasets, transforms
+
 # Ensure reproducibility
 torch.manual_seed(42)
 
@@ -34,20 +36,31 @@ class LeNet(nn.Module):
 model = LeNet()
 model.eval()
 
-# === 2. Create one input image and save it
-input_image = np.random.rand(1, 1, 28, 28).astype(np.float32)
-input_tensor = torch.from_numpy(input_image)
+# === 2. Load one MNIST image (e.g., digit at index 0)
+transform = transforms.Compose([transforms.ToTensor()])
+mnist = datasets.MNIST(root="./data", train=False, download=True, transform=transform)
 
-input_image.tofile("test_input.bin")
-print("✅ Saved test_input.bin")
+N = len(mnist)
+images = np.zeros((N, 1, 28, 28), dtype=np.float32)
+labels = np.zeros((N,), dtype=np.int32)
+
+for i in range(N):
+    img, label = mnist[i]
+    images[i] = img.numpy()
+    labels[i] = label
+
+images.tofile("mnist_images.bin")
+labels.tofile("mnist_labels.bin")
+
+print("✅ Exported mnist_images.bin and mnist_labels.bin")
 
 # === 3. Run inference and save output
 with torch.no_grad():
-    output_tensor = model(input_tensor)
+    output_tensor = model(torch.from_numpy(images))
 
-output_np = output_tensor.numpy()
-output_np.astype(np.float32).tofile("expected_output.bin")
-print("✅ Saved expected_output.bin")
+output = output_tensor.detach().numpy()
+output.tofile("mnist_output.bin")
+print("✅ Exported mnist_output.bin")
 
 # === 4. Save weights and biases
 params = {k: v.cpu().detach().numpy() for k, v in model.state_dict().items()}

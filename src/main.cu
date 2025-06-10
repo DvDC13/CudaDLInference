@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 
 #include "conv2d_forward.cuh"
 #include "maxpool2d_forward.cuh"
@@ -46,62 +47,78 @@ int main(void)
 
     std::cout << "✅ Loaded weights" << std::endl;
 
-    std::vector<float> inputImage_cpu = loader.loadInVector<float>("test_input", 28 * 28);
+    size_t N = 10000, C = 1, H = 28, W = 28;
 
-    CudaArray<float> input_gpu;
-    input_gpu.allocate(1, 28, 28);
-    input_gpu.copyToDevice(inputImage_cpu.data());
+    std::vector<float> testInput = loader.loadImages<float>("../python/mnist_images.bin", N, C, H, W);
+    std::vector<float> testLabels = loader.loadLabels<float>("../python/mnist_labels.bin", N);
+    std::vector<float> expected_output = loader.loadInVector<float>("mnist_output", N * 10);
 
-    CudaArray<float> conv1_out_gpu;
-    conv1_out_gpu.allocate(1, 6, 24, 24);
-    conv2d_forward(input_gpu.data(), conv1_w, conv1_b, conv1_out_gpu.data(), 1, 1, 28, 28, 6, 5, 5, 1, 0);
+    for (int i = 0; i < 10000; i++)
+    {
+        float* inputImage_cpu = testInput.data() + i * C * H * W;
 
-    relu_forward(conv1_out_gpu.data(), 1, 6, 24, 24);
+        CudaArray<float> input_gpu;
+        input_gpu.allocate(1, 28, 28);
+        input_gpu.copyToDevice(inputImage_cpu);
 
-    CudaArray<float> pool1_out_gpu;
-    pool1_out_gpu.allocate(1, 6, 12, 12);
-    maxpool2d_forward(conv1_out_gpu.data(), pool1_out_gpu.data(), 1, 6, 24, 24, 2, 2, 2);
+        CudaArray<float> conv1_out_gpu;
+        conv1_out_gpu.allocate(1, 6, 24, 24);
+        conv2d_forward(input_gpu.data(), conv1_w, conv1_b, conv1_out_gpu.data(), 1, 1, 28, 28, 6, 5, 5, 1, 0);
 
-    CudaArray<float> conv2_out_gpu;
-    conv2_out_gpu.allocate(1, 16, 8, 8);
-    conv2d_forward(pool1_out_gpu.data(), conv2_w, conv2_b, conv2_out_gpu.data(), 1, 6, 12, 12, 16, 5, 5, 1, 0);
+        relu_forward(conv1_out_gpu.data(), 1, 6, 24, 24);
 
-    relu_forward(conv2_out_gpu.data(), 1, 16, 8, 8);
+        CudaArray<float> pool1_out_gpu;
+        pool1_out_gpu.allocate(1, 6, 12, 12);
+        maxpool2d_forward(conv1_out_gpu.data(), pool1_out_gpu.data(), 1, 6, 24, 24, 2, 2, 2);
 
-    CudaArray<float> pool2_out_gpu;
-    pool2_out_gpu.allocate(1, 16, 4, 4);
-    maxpool2d_forward(conv2_out_gpu.data(), pool2_out_gpu.data(), 1, 16, 8, 8, 2, 2, 2);
+        CudaArray<float> conv2_out_gpu;
+        conv2_out_gpu.allocate(1, 16, 8, 8);
+        conv2d_forward(pool1_out_gpu.data(), conv2_w, conv2_b, conv2_out_gpu.data(), 1, 6, 12, 12, 16, 5, 5, 1, 0);
 
-    CudaArray<float> flatten_out_gpu;
-    flatten_out_gpu.allocate(1, 256);
-    flatten_forward(pool2_out_gpu.data(), flatten_out_gpu.data(), 1, 16, 4, 4);
+        relu_forward(conv2_out_gpu.data(), 1, 16, 8, 8);
 
-    CudaArray<float> fc1_out_gpu;
-    fc1_out_gpu.allocate(1, 120);
-    fc_forward(flatten_out_gpu.data(), fc1_w, fc1_b, fc1_out_gpu.data(), 1, 256, 120);
+        CudaArray<float> pool2_out_gpu;
+        pool2_out_gpu.allocate(1, 16, 4, 4);
+        maxpool2d_forward(conv2_out_gpu.data(), pool2_out_gpu.data(), 1, 16, 8, 8, 2, 2, 2);
 
-    relu_forward(fc1_out_gpu.data(), 1, 120, 1, 1);
+        CudaArray<float> flatten_out_gpu;
+        flatten_out_gpu.allocate(1, 256);
+        flatten_forward(pool2_out_gpu.data(), flatten_out_gpu.data(), 1, 16, 4, 4);
 
-    CudaArray<float> fc2_out_gpu;
-    fc2_out_gpu.allocate(1, 84);
-    fc_forward(fc1_out_gpu.data(), fc2_w, fc2_b, fc2_out_gpu.data(), 1, 120, 84);
+        CudaArray<float> fc1_out_gpu;
+        fc1_out_gpu.allocate(1, 120);
+        fc_forward(flatten_out_gpu.data(), fc1_w, fc1_b, fc1_out_gpu.data(), 1, 256, 120);
 
-    relu_forward(fc2_out_gpu.data(), 1, 84, 1, 1);
+        relu_forward(fc1_out_gpu.data(), 1, 120, 1, 1);
 
-    CudaArray<float> fc3_out_gpu;
-    fc3_out_gpu.allocate(1, 10);
-    fc_forward(fc2_out_gpu.data(), fc3_w, fc3_b, fc3_out_gpu.data(), 1, 84, 10);
+        CudaArray<float> fc2_out_gpu;
+        fc2_out_gpu.allocate(1, 84);
+        fc_forward(fc1_out_gpu.data(), fc2_w, fc2_b, fc2_out_gpu.data(), 1, 120, 84);
 
-    float output_cpu[10];
-    fc3_out_gpu.copyToHost(output_cpu);
+        relu_forward(fc2_out_gpu.data(), 1, 84, 1, 1);
 
-    std::vector<float> expected_output = loader.loadInVector<float>("expected_output", 10);
+        CudaArray<float> fc3_out_gpu;
+        fc3_out_gpu.allocate(1, 10);
+        fc_forward(fc2_out_gpu.data(), fc3_w, fc3_b, fc3_out_gpu.data(), 1, 84, 10);
 
-    if (compareOutputs(output_cpu, expected_output.data(), 10)) {
-        std::cout << "✅ Output matches expected_output.bin\n";
-    } else {
-        std::cerr << "❌ Mismatch detected.\n";
-        return 1;
+        float output_cpu[10];
+        fc3_out_gpu.copyToHost(output_cpu);
+
+        if (compareOutputs(output_cpu, expected_output.data() + i * 10, 10)) {
+            std::cout << "✅ Output matches expected_output.bin\n";
+        } else {
+            std::cerr << "❌ Mismatch detected.\n";
+        }
+
+        int predicted = std::distance(output_cpu, std::max_element(output_cpu, output_cpu + 10));
+
+        int ground_truth = testLabels[i];
+        
+        if (predicted != ground_truth) {
+            std::cout << "Wrong prediction at " << i << ": predicted " << predicted
+                << ", actual " << ground_truth << '\n';
+        }
+        
     }
 
     return EXIT_SUCCESS;
