@@ -45,29 +45,3 @@ __global__ void conv2d_forward_kernel(
     int out_index = ((n * C_out + co) * H_out + ho) * W_out + wo;
     output[out_index] = val;
 }
-
-void conv2d_forward(
-    const float* input,
-    const float* weights,
-    const float* bias,
-    float* output,
-    int N, int C_in, int H, int W,
-    int C_out, int KH, int KW,
-    int stride, int padding
-)
-{
-    int H_out = (H + 2 * padding - KH) / stride + 1;
-    int W_out = (W + 2 * padding - KW) / stride + 1;
-
-    dim3 blocks(1, 1, 1);
-    dim3 grid(W_out * H_out, C_out, N);
-
-    conv2d_forward_kernel<<<grid, blocks>>>(
-        input, weights, bias, output,
-        N, C_in, H, W,
-        C_out, KH, KW,
-        stride, padding
-    );
-
-    cudaDeviceSynchronize();
-}

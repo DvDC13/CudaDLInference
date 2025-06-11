@@ -28,22 +28,3 @@ __global__ void fc_forward_kernel(
         output[n * D_out + d_out] = sum;
     }
 }
-
-void fc_forward(
-    const float* input,
-    const float* weights,
-    const float* bias,
-    float* output,
-    int N, int D_in, int D_out
-)
-{
-    dim3 blocks(1, 1, 1);
-    dim3 grid(D_out, 1, N);
-
-    fc_forward_kernel<<<grid, blocks>>>(
-        input, weights, bias, output,
-        N, D_in, D_out
-    );
-
-    cudaDeviceSynchronize();
-}

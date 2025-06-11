@@ -35,27 +35,3 @@ __global__ void maxpool2d_forward_kernel(
 
     output[n * C * H_out * W_out + c * H_out * W_out + ho * W_out + wo] = val;
 }
-
-void maxpool2d_forward(
-    const float* input,
-    float* output,
-    int N, int C, int H, int W,
-    int pool_H, int pool_W,
-    int stride
-)
-{
-    const int H_out = (H - pool_H) / stride + 1;
-    const int W_out = (W - pool_W) / stride + 1;
-
-    dim3 blocks(1, 1, 1);
-    dim3 grid(W_out * H_out, C, N);
-
-    maxpool2d_forward_kernel<<<grid, blocks>>>(
-        input, output,
-        N, C, H, W,
-        pool_H, pool_W,
-        stride
-    );
-
-    cudaDeviceSynchronize();
-}
